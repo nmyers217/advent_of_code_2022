@@ -6,15 +6,8 @@ const data = await Deno.readTextFile("./input/day_01.txt");
 const sums = R.pipe(
   R.split("\n\n"),
   R.map(R.pipe(R.split("\n"), R.map(Number), R.sum)),
+  R.sort(R.comparator(R.gt)),
 )(data);
 
-const partOne = R.reduce(R.max, 0, sums)
-
-const partTwo = R.pipe(
-  R.sort(R.comparator(R.gt)),
-  R.take(3),
-  R.sum,
-)(sums);
-
-console.log(partOne);
-console.log(partTwo);
+console.log(R.take(1, sums)[0]);
+console.log(R.sum(R.take(3, sums)));
