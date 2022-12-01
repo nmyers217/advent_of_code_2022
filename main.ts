@@ -1,3 +1,2 @@
-import { solve as day1_solve } from "./day_01.ts";
-
-await day1_solve();
+import "./day_01.ts";
+import "./day_02.ts";
