@@ -9,5 +9,6 @@ const sums = R.pipe(
   R.sort(R.comparator(R.gt)),
 )(data);
 
+console.log('Day 1:')
 console.log(R.take(1, sums)[0]);
 console.log(R.sum(R.take(3, sums)));
