@@ -8,27 +8,25 @@ const priority = (letter) => {
   return c >= 97 ? c - 96 : c - 38;
 };
 
-const sacks = R.split("\n", data);
-
-const countSack = R.pipe(
+const sumStack = R.pipe(
   (sack) => R.splitEvery(R.length(sack) / 2, sack),
   R.apply(R.intersection),
   R.map(priority),
 );
 
-const partOne = R.pipe(
-  R.map(countSack),
-  R.flatten,
-  R.sum,
-)(sacks);
-
-const partTwo = R.pipe(
-  R.splitEvery(3),
-  R.map(([x, ...xs]) => R.reduce(R.intersection, x, xs)),
-  R.flatten,
+const sumGroupOfSacks = R.pipe(
+  ([x, ...xs]) => R.reduce(R.intersection, x, xs),
   R.map(priority),
-  R.sum,
-)(sacks);
+);
+
+const sacks = R.split("\n", data);
+const partOne = R.transduce(R.map(sumStack), R.add, 0, sacks);
+const partTwo = R.transduce(
+  R.map(sumGroupOfSacks),
+  R.add,
+  0,
+  R.splitEvery(3, sacks),
+);
 
 console.log("Day 3:");
 console.log(partOne);
