@@ -8,21 +8,21 @@ const priority = (letter) => {
   return c >= 97 ? c - 96 : c - 38;
 };
 
-const sumStack = R.pipe(
+const sackPriority = R.pipe(
   (sack) => R.splitEvery(R.length(sack) / 2, sack),
   R.apply(R.intersection),
   R.map(priority),
 );
 
-const sumGroupOfSacks = R.pipe(
+const sackPriorities = R.pipe(
   ([x, ...xs]) => R.reduce(R.intersection, x, xs),
   R.map(priority),
 );
 
 const sacks = R.split("\n", data);
-const partOne = R.transduce(R.map(sumStack), R.add, 0, sacks);
+const partOne = R.transduce(R.map(sackPriority), R.add, 0, sacks);
 const partTwo = R.transduce(
-  R.map(sumGroupOfSacks),
+  R.map(sackPriorities),
   R.add,
   0,
   R.splitEvery(3, sacks),
