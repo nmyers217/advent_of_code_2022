@@ -2,53 +2,50 @@ import * as R from "https://deno.land/x/ramda@v0.27.2/mod.ts";
 
 const data = await Deno.readTextFile("./input/day_07.txt");
 
-const defaultState = {
-  tree: {},
-  stack: [],
-};
+const defaultState = { tree: {}, stack: [] };
 
-const nextState = ({ tree, stack }, line) => {
-  if (R.startsWith("$", line)) {
-    const [cmd, dir] = R.pipe(R.split(" "), R.tail)(line);
-    if (cmd === "ls") return { tree, stack };
-    return {
-      tree,
-      stack: dir === ".." ? R.dropLast(1, stack) : R.append(dir, stack),
-    };
-  }
+const nextState = R.cond([
+  // Change directory, modify the stack
+  [R.flip(R.test(/\$ cd .+/)), (state, line) => {
+    const dir = R.last(R.split(" ", line));
+    return R.evolve({
+      tree: R.identity,
+      stack: dir === ".." ? R.dropLast(1) : R.append(dir),
+    }, state);
+  }],
 
-  if (R.complement(R.startsWith("dir", line))) {
+  // File found, add new file to the tree
+  [R.flip(R.test(/\d+ .+/)), (state, line) => {
     const [size, name] = R.split(" ", line);
-    return {
-      tree: R.assocPath(R.append(name, stack), parseInt(size), tree),
-      stack,
-    };
-  }
+    return R.evolve({
+      stack: R.identity,
+      tree: R.assocPath(R.append(name, state.stack), parseInt(size)),
+    }, state);
+  }],
 
-  return { tree, stack };
-};
+  [R.T, R.identity],
+]);
 
-const allSizes = [];
 const dfs = (tree) => {
-  const size = R.reduce(
-    (acc, [k, v]) => acc + (R.is(Number, v) ? v : dfs(tree[k])),
-    0,
-    R.toPairs(tree),
-  );
-  allSizes.push(size);
-  return size;
+  const result = [];
+  const helper = (tree) => {
+    const size = R.reduce(
+      (acc, [k, v]) => acc + (R.is(Number, v) ? v : helper(tree[k])),
+      0,
+      R.toPairs(tree),
+    );
+    result.push(size);
+    return size;
+  };
+  helper(tree);
+  return result;
 };
 
-const state = R.reduce(nextState, defaultState, R.split("\n", data));
-const totalSize = 70_000_000;
-const sizeUsed = dfs(state.tree);
-const spaceNeeded = 30_000_000 - (totalSize - sizeUsed);
+const { tree } = R.reduce(nextState, defaultState, R.split("\n", data));
+const sizes = R.sort(R.comparator(R.lt), dfs(tree));
+const spaceNeeded = 30_000_000 - (70_000_000 - R.last(sizes));
 
-const partOne = R.pipe(
-  R.filter(R.lt(R.__, 100_000)),
-  R.sum,
-);
-
+const partOne = R.pipe(R.filter(R.lt(R.__, 100_000)), R.sum);
 const partTwo = R.pipe(
   R.sort(R.comparator(R.lt)),
   R.filter(R.gt(R.__, spaceNeeded)),
@@ -56,5 +53,5 @@ const partTwo = R.pipe(
 );
 
 console.log("Day 7:");
-console.log(partOne(allSizes));
-console.log(partTwo(allSizes));
+console.log(partOne(sizes));
+console.log(partTwo(sizes));
