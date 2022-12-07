@@ -46,11 +46,7 @@ const sizes = R.sort(R.comparator(R.lt), dfs(tree));
 const spaceNeeded = 30_000_000 - (70_000_000 - R.last(sizes));
 
 const partOne = R.pipe(R.filter(R.lt(R.__, 100_000)), R.sum);
-const partTwo = R.pipe(
-  R.sort(R.comparator(R.lt)),
-  R.filter(R.gt(R.__, spaceNeeded)),
-  R.head,
-);
+const partTwo = R.pipe(R.filter(R.gt(R.__, spaceNeeded)), R.head);
 
 console.log("Day 7:");
 console.log(partOne(sizes));
