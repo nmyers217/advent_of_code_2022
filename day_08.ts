@@ -6,50 +6,65 @@ const grid = R.pipe(R.split("\n"), R.map(R.split("")), R.map(R.map(parseInt)));
 
 const dirs = [[-1, 0], [0, -1], [1, 0], [0, 1]];
 
-const outOfBounds = (grid) => ([x, y]) => (
-  x < 0 || y < 0 || x >= grid[0].length || y >= grid.length
-);
+const outOfBounds = R.curry((grid, [y, x]) => (
+  x < 0 || y < 0 || R.isNil(R.path([y, x], grid))
+));
 
-const score = (grid) => ([x, y]) => {
-  const height = grid[y][x];
-  let total = 1;
-  let visibleFromOutside = false;
+const manhattan = R.curry((end, start) => (
+  Math.abs(R.sum(R.zipWith(R.subtract, end, start)))
+));
 
-  for (const [dx, dy] of dirs) {
-    let loc = [x, y];
-    let score = 0;
+const score = R.curry((grid, coord) => {
+  const height = R.path(coord, grid);
 
-    while (true) {
-      const [x2, y2] = [loc[0] + dx, loc[1] + dy];
-      if (outOfBounds(grid)([x2, y2])) {
-        visibleFromOutside = true;
-        break;
-      }
-      score++;
-      if (grid[y2][x2] >= height) break;
-      loc = [x2, y2];
-    }
+  const stop = (coord) =>
+    outOfBounds(grid, coord) || R.path(coord, grid) >= height;
 
-    total *= score;
-  }
+  const transformDir = R.compose(
+    R.map(R.zipWith(R.add)),
+    R.map((stepFn) => [stepFn, stepFn(coord)]),
+    R.map(R.apply(R.until(stop))),
+  );
 
-  return [visibleFromOutside, total];
-};
+  const nextState = R.cond([
+    [R.flip(outOfBounds(grid)), (state, endCoord) => (
+      R.evolve({
+        visible: R.T,
+        score: R.multiply(manhattan(coord, endCoord) - 1),
+      }, state)
+    )],
+
+    [R.T, (state, endCoord) => (
+      R.evolve({
+        visible: R.identity,
+        score: R.multiply(manhattan(coord, endCoord)),
+      }, state)
+    )],
+  ]);
+
+  return R.transduce(
+    transformDir,
+    nextState,
+    { visible: false, score: 1 },
+    dirs,
+  );
+});
 
 const g = grid(data);
-const [xLen, yLen] = [R.length(R.head(g)), R.length(g)];
-const coords = R.chain(
-  (y) => R.map((x) => [x, y], R.range(0, xLen)),
-  R.range(0, yLen),
-);
+const [cols, rows] = [R.length(R.head(g)), R.length(g)];
+const coords = R.xprod(R.range(0, rows), R.range(0, cols));
+
 const partOne = R.transduce(
-  R.filter(R.pipe(score(g), R.head)),
+  R.filter(R.pipe(score(g), R.prop("visible"))),
   R.add(1),
   0,
-  coords,
 );
-const partTwo = R.transduce(R.map(R.pipe(score(g), R.last)), R.max, 0, coords);
+const partTwo = R.transduce(
+  R.map(R.pipe(score(g), R.prop("score"))),
+  R.max,
+  0,
+);
 
 console.log("Day 8:");
-console.log(partOne);
-console.log(partTwo);
+console.log(partOne(coords));
+console.log(partTwo(coords));
