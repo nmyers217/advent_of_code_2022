@@ -1,4 +1,3 @@
-// @deno-types="https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/master/types/ramda/index.d.ts"
 import * as R from "https://deno.land/x/ramda@v0.27.2/mod.ts";
 
 const data = await Deno.readTextFile("./input/day_04.txt");
