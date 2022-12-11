@@ -8,3 +8,4 @@ import "./day_07.ts";
 import "./day_08.ts";
 import "./day_09.ts";
 import "./day_10.ts";
+import "./day_11.ts";
