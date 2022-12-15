@@ -1,4 +1,5 @@
 import * as R from "https://deno.land/x/ramda@v0.27.2/mod.ts";
+import * as mr from "https://cdn.skypack.dev/multi-integer-range?dts";
 
 const data = await Deno.readTextFile("./input/day_15.txt");
 
@@ -17,54 +18,34 @@ Sensor at x=16, y=7: closest beacon is at x=15, y=3
 Sensor at x=14, y=3: closest beacon is at x=15, y=3
 Sensor at x=20, y=1: closest beacon is at x=15, y=3`;
 
-const points = R.pipe(
+const parse = R.pipe(
   R.split("\n"),
-  R.map(R.match(/-?\d+/g)),
-  R.map(R.map(parseInt)),
-)(testData);
+  R.map(R.pipe(R.match(/-?\d+/g), R.map(parseInt))),
+);
 
-const map = {};
-for (const [sx, sy, bx, by] of points) {
-  map[[sx, sy].toString()] = [bx, by];
-}
+const partOne = (row, coords) => {
+  let ranges = [];
+  for (const [sx, sy, bx, by] of coords) {
+    const beaconDist = Math.abs(by - sy) + Math.abs(bx - sx);
 
-const toPoint = R.pipe(R.split(","), R.map(parseInt));
-const toSet = (arr) =>
-  R.reduce(
-    (acc, el) => {
-      acc[el.toString()] = true;
-      return acc;
-    },
-    {},
-    arr,
-  );
-const manhattan = R.pipe(R.zipWith(R.subtract), R.map(Math.abs), R.sum);
+    // The sensor and beacon do not intersect the row
+    if (sy - beaconDist > row || sy + beaconDist < row) continue;
 
-const sensors = R.pipe(
-  Object.keys,
-  R.map(toPoint),
-  toSet,
-)(map);
+    // Distance from sensor to target row
+    const ty = Math.abs(row - sy);
+    const tx = Math.abs(beaconDist - ty);
 
-const row = 10;
-// const row = 2_000_000;
-const emptyPoints = {};
-for (const k of Object.keys(map)) {
-  const [sx, sy] = toPoint(k);
-  const [bx, by] = map[k];
-  const beaconDist = manhattan([sx, sy], [bx, by]);
+    // The x range the sensor covers
+    const [minX, maxX] = [sx - tx, sx + tx];
 
-  // console.log(k);
-
-  for (let x = sx - beaconDist; x < sx + beaconDist; x++) {
-    if (x === bx && row === by) continue;
-    const dist = manhattan([sx, sy], [x, row]);
-    if (dist > beaconDist) continue;
-    emptyPoints[[x, row].toString()] = true;
+    // Modify the multi range, make sure not to include beacons
+    ranges = mr.append(ranges, [[minX, maxX]]);
+    if (by === row) ranges = mr.subtract(ranges, [[bx, bx]]);
   }
-}
+  return mr.length(ranges);
+};
 
-const partOne = Object.keys(emptyPoints).length;
+const coords = parse(data);
 
 console.log("Day 15:");
-console.log(partOne);
+console.log(partOne(2_000_000, coords));
